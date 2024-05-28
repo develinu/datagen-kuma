@@ -31,11 +31,11 @@ class DataGen:
             yield idx, item
 
     def _init_column_dtype_classification(self):
-        self.column_types["numeric"] = df.select_dtypes(include=["number"]).columns.tolist()
-        self.column_types["categorical"] = df.select_dtypes(include=["category"]).columns.tolist()
-        self.column_types["datetime"] = df.select_dtypes(include=["datetime"]).columns.tolist()
-        self.column_types["boolean"] = df.select_dtypes(include=["bool"]).columns.tolist()
-        self.column_types["etc"] = df.select_dtypes(
+        self.column_types["numeric"] = self.df.select_dtypes(include=["number"]).columns.tolist()
+        self.column_types["categorical"] = self.df.select_dtypes(include=["category"]).columns.tolist()
+        self.column_types["datetime"] = self.df.select_dtypes(include=["datetime"]).columns.tolist()
+        self.column_types["boolean"] = self.df.select_dtypes(include=["bool"]).columns.tolist()
+        self.column_types["etc"] = self.df.select_dtypes(
             exclude=["number", "category", "datetime", "bool"]
         ).columns.tolist()
         self._convert_column_dtype_object_to_category()
@@ -209,24 +209,3 @@ class DataGen:
         ]
         ic(generated_data)
         return pd.concat(generated_data, axis=1)
-
-
-if __name__ == "__main__":
-    df = pd.read_csv("./data/events.csv")
-    series_len = len(df.timestamp)
-    df["my_dt"] = pd.date_range("2020-01-01", "2024-05-28", periods=series_len)
-    true_count = int(series_len * 0.7)
-    false_count = series_len - true_count
-    df["my_bool"] = ([True] * true_count) + ([False] * false_count)
-    df["my_other"] = [[1,2,3,4,5]] * series_len
-    print(df)
-    print(df.info())
-    dg = DataGen(df)
-    # for idx, item in dg:
-    #     print(idx, item)
-    print(dg.column_types)
-    print(dg.column_types.values())
-    print(dg.statistics)
-    gen_df = dg.generate(count=1000000)
-    print(gen_df)
-    print(gen_df.info())

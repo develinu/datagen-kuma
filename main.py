@@ -125,7 +125,7 @@ class DataGen:
             frequencies_rate = self.statistics[column]["frequencies_rate"]
             keys = list(frequencies_rate.keys())
             values = list(frequencies_rate.values())
-            generated_data = np.random.choice(keys, size=count, p=values)
+            generated_data = np.random.choice(keys, size=count, p=values, replace=True)
             result.append(pd.Series(generated_data, dtype="boolean", name=column))
 
         return result
@@ -155,7 +155,7 @@ class DataGen:
             frequencies_rate = self.statistics[column]["frequencies_rate"]
             keys = list(frequencies_rate.keys())
             values = list(frequencies_rate.values())
-            generated_data = np.random.choice(keys, size=count, p=values)
+            generated_data = np.random.choice(keys, size=count, p=values, replace=True)
             result.append(pd.Series(generated_data, dtype="category", name=column))
 
         return result
@@ -182,14 +182,22 @@ class DataGen:
         return result
 
     def _etc_statistics(self):
-        """
-        해당 컬럼 중 랜덤한 값을 샘플링하여 값을 생성합니다.
-        :return:
-        """
         pass
 
     def _generate_etc_data(self, count: int) -> List[pd.Series]:
-        return []
+        """
+        해당 컬럼 중 랜덤한 값을 샘플링하여 값을 생성합니다.
+
+        :param count: 생성할 데이터 수
+        :return: 생성된 데이터 시리즈 리스트
+        """
+        result: List[pd.Series] = []
+
+        for column in self.column_types["etc"]:
+            generated_data = np.random.choice(self.df[column], size=count, replace=True)
+            result.append(pd.Series(generated_data, dtype=self.df[column].dtype, name=column))
+
+        return result
 
     def generate(self, count: int) -> pd.DataFrame:
         generated_data = [
@@ -210,6 +218,7 @@ if __name__ == "__main__":
     true_count = int(series_len * 0.7)
     false_count = series_len - true_count
     df["my_bool"] = ([True] * true_count) + ([False] * false_count)
+    df["my_other"] = [[1,2,3,4,5]] * series_len
     print(df)
     print(df.info())
     dg = DataGen(df)

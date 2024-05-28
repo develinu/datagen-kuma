@@ -111,10 +111,24 @@ class DataGen:
         return result
 
     def _boolean_statistics(self):
-        pass
+        for column in self.column_types["boolean"]:
+            value_counts = self.calculate_value_counts(self.df[column])
+            self.statistics[column].update({
+                "value_counts": value_counts,
+                "frequencies_rate": self.calculate_relative_frequencies_rate(value_counts)
+            })
 
     def _generate_boolean_data(self, count: int) -> List[pd.Series]:
-        return []
+        result: List[pd.Series] = []
+
+        for column in self.column_types["boolean"]:
+            frequencies_rate = self.statistics[column]["frequencies_rate"]
+            keys = list(frequencies_rate.keys())
+            values = list(frequencies_rate.values())
+            generated_data = np.random.choice(keys, size=count, p=values)
+            result.append(pd.Series(generated_data, dtype="boolean", name=column))
+
+        return result
 
     @staticmethod
     def calculate_relative_frequencies_rate(value_counts: dict):
@@ -193,6 +207,9 @@ if __name__ == "__main__":
     df = pd.read_csv("./data/events.csv")
     series_len = len(df.timestamp)
     df["my_dt"] = pd.date_range("2020-01-01", "2024-05-28", periods=series_len)
+    true_count = int(series_len * 0.7)
+    false_count = series_len - true_count
+    df["my_bool"] = ([True] * true_count) + ([False] * false_count)
     print(df)
     print(df.info())
     dg = DataGen(df)

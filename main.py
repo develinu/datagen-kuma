@@ -1,13 +1,11 @@
 import copy
 from typing import List
+from collections import defaultdict
 
 from icecream import ic
 import numpy as np
 import pandas as pd
-from pandas.core.arrays.numeric import (
-    NumericArray,
-    NumericDtype,
-)
+from scipy.stats import gaussian_kde
 
 
 class DataGen:
@@ -24,17 +22,13 @@ class DataGen:
             "datetime": [],
             "boolean": []
         }
-        self.statistics = {}
+        self.statistics = defaultdict(dict)
         self._init_column_dtype_classification()
-        self._convert_column_dtype_object_to_category()
-        self._categorical_statistics()
+        self._run_statistics()
 
     def __iter__(self):
         for idx, item in self.df.iterrows():
             yield idx, item
-
-    def _preprocessing(self):
-        pass
 
     def _init_column_dtype_classification(self):
         self.column_types["numeric"] = df.select_dtypes(include=["number"]).columns.tolist()
@@ -44,6 +38,8 @@ class DataGen:
         self.column_types["etc"] = df.select_dtypes(
             exclude=["number", "category", "datetime", "bool"]
         ).columns.tolist()
+        self._convert_column_dtype_object_to_category()
+        self._convert_column_dtype_object_to_datetime()
 
     def _convert_column_dtype_object_to_category(self):
         etc_columns = copy.deepcopy(self.column_types["etc"])
@@ -57,15 +53,68 @@ class DataGen:
             except Exception:
                 raise
 
+    def _convert_column_dtype_object_to_datetime(self):
+        etc_columns = copy.deepcopy(self.column_types["etc"])
+        numeric_columns = copy.deepcopy(self.column_types["numeric"])
+        columns_map = {
+            "etc": etc_columns,
+            "numeric": numeric_columns
+        }
+        for column_category, columns in columns_map.items():
+            for column in columns:
+                try:
+                    self.df[column] = pd.to_datetime(self.df[column], format="ISO8601")
+                    self.column_types["datetime"].append(column)
+                    self.column_types[column_category].remove(column)
+                except TypeError:
+                    continue
+                except ValueError:
+                    continue
+                except Exception:
+                    raise
+
     def _run_statistics(self):
-        statistics = {}
+        self._numeric_statistics()
+        self._categorical_statistics()
+        self._boolean_statistics()
+        self._datetime_statistics()
+        self._etc_statistics()
 
     def _numeric_statistics(self):
         """
-        3-sigma 내의 값 중 분포를 고려한 임의의 값을 생성합니다.
+        커널 밀도 추정(Kernel Density Estimation, KDE) 기법을 활용한 임의의 값을 생성합니다.
+        커널 밀도 함수는 `scipy.stats`의 `gaussian_kde`를 사용합니다.
         :return:
         """
+
+        for column in self.column_types["numeric"]:
+            series = self.df[column].dropna()
+            self.statistics[column].update({
+                "min": series.min(),
+                "max": series.max(),
+                "kde": gaussian_kde(series.values),
+                "dtype": series.dtype
+            })
+
+    def _generate_numeric_data(self, count: int) -> List[pd.Series]:
+        result: List[pd.Series] = []
+
+        for column in self.column_types["numeric"]:
+            kde = self.statistics[column]["kde"]
+            min_value = self.statistics[column]["min"]
+            max_value = self.statistics[column]["max"]
+            dtype = self.statistics[column]["dtype"]
+            kde_data = kde.resample(count).flatten()
+            generated_data = np.clip(kde_data, min_value, max_value).astype(dtype)
+            result.append(pd.Series(generated_data, dtype=dtype, name=column))
+
+        return result
+
+    def _boolean_statistics(self):
         pass
+
+    def _generate_boolean_data(self, count: int) -> List[pd.Series]:
+        return []
 
     @staticmethod
     def calculate_relative_frequencies_rate(value_counts: dict):
@@ -80,18 +129,16 @@ class DataGen:
     def _categorical_statistics(self):
         for column in self.column_types["categorical"]:
             value_counts = self.calculate_value_counts(self.df[column])
-            self.statistics[column] = {
-                "categorical": {
-                    "value_counts": value_counts,
-                    "frequencies_rate": self.calculate_relative_frequencies_rate(value_counts)
-                }
-            }
+            self.statistics[column].update({
+                "value_counts": value_counts,
+                "frequencies_rate": self.calculate_relative_frequencies_rate(value_counts)
+            })
 
     def _generate_categorical_data(self, count: int) -> List[pd.Series]:
         result: List[pd.Series] = []
 
         for column in self.column_types["categorical"]:
-            frequencies_rate = self.statistics[column]["categorical"]["frequencies_rate"]
+            frequencies_rate = self.statistics[column]["frequencies_rate"]
             keys = list(frequencies_rate.keys())
             values = list(frequencies_rate.values())
             generated_data = np.random.choice(keys, size=count, p=values)
@@ -99,9 +146,26 @@ class DataGen:
 
         return result
 
-
     def _datetime_statistics(self):
-        pass
+        for column in self.column_types["datetime"]:
+            self.statistics[column].update({
+                "start_datetime": self.df[column].min(),
+                "end_datetime": self.df[column].max()
+            })
+
+    def _generate_datetime_data(self, count: int) -> List[pd.Series]:
+        result: List[pd.Series] = []
+
+        for column in self.column_types["datetime"]:
+            start_datetime = self.statistics[column]["start_datetime"]
+            end_datetime = self.statistics[column]["end_datetime"]
+            generated_data = pd.to_datetime(
+                np.random.randint(start_datetime.value, end_datetime.value, size=count, dtype="int64"),
+                unit='ns'
+            )
+            result.append(pd.Series(generated_data, dtype="datetime64[ns]", name=column))
+
+        return result
 
     def _etc_statistics(self):
         """
@@ -110,16 +174,25 @@ class DataGen:
         """
         pass
 
+    def _generate_etc_data(self, count: int) -> List[pd.Series]:
+        return []
+
     def generate(self, count: int) -> pd.DataFrame:
-        data = self._generate_categorical_data(count)
-        return pd.concat(data, axis=1)
+        generated_data = [
+            *self._generate_categorical_data(count),
+            *self._generate_numeric_data(count),
+            *self._generate_datetime_data(count),
+            *self._generate_boolean_data(count),
+            *self._generate_etc_data(count),
+        ]
+        ic(generated_data)
+        return pd.concat(generated_data, axis=1)
 
 
 if __name__ == "__main__":
-    df = pd.DataFrame(np.empty([4, 5]))
-    df["etc"] = pd.Series(data=[[1,2,3,4,5]])
-    df["item"] = pd.Series(data=["a", "b", "c", "a", "a"])
-    df["person"] = pd.Series(data=["inu", "joe", "stew", "stew", "inu", "joe", "joe", "inu", "inu", "inu"])
+    df = pd.read_csv("./data/events.csv")
+    series_len = len(df.timestamp)
+    df["my_dt"] = pd.date_range("2020-01-01", "2024-05-28", periods=series_len)
     print(df)
     print(df.info())
     dg = DataGen(df)

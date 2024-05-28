@@ -23,13 +23,13 @@ def test_datagen():
     ic(df.info())
     ic(df)
 
-    datagen = DataGen(df)
+    generate_data_count = 1000000
+    datagen = DataGen(df=df, count=generate_data_count)
     ic(datagen.column_types)
     ic(datagen.column_types.values())
     ic(datagen.statistics)
 
-    generate_data_count = 1000000
-    generated_df = datagen.generate(count=generate_data_count)
+    generated_df = datagen.dataframe
     ic(generated_df.info())
     ic(generated_df)
 

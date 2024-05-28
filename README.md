@@ -1,9 +1,9 @@
-# DataGen
-DataGen is a library for generating test data.   
+# DataGen-kuma
+DataGen-kuma is a library for generating test data.   
 It creates similar data with the same schema based on a Pandas DataFrame.
 
 # How It Works
-DataGen takes a DataFrame as input and generates random test data.   
+DataGen-kuma takes a DataFrame as input and generates random test data.   
 Internally, it generates statistical metrics for each data type to facilitate data generation.   
 Using these metrics, it produces similar data appropriate for each data type.
 
@@ -20,7 +20,7 @@ This example generates 100,000 rows of data.
 The generated object allows access to each row through iteration.
 
 ```python
-from datagen import DataGen
+from datagen_kuma.datagen import DataGen
 
 datagen = DataGen(df=df, count=100_000)
 for idx, row in datagen:

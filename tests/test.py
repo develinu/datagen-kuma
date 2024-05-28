@@ -2,7 +2,7 @@ import os
 
 from icecream import ic
 import pandas as pd
-from datagen import DataGen
+from datagen_kuma.datagen import DataGen
 
 
 data_dir = os.path.join(

@@ -1,9 +1,9 @@
-# DataGen
-DataGen은 테스트용 데이터 생성을 위한 라이브러리입니다.   
+# DataGen-kuma
+DataGen-kuma는 테스트용 데이터 생성을 위한 라이브러리입니다.   
 판다스의 데이터프레임을 기반으로 동일한 스키마의 유사 데이터를 생성합니다.
 
 # 동작 방식
-DataGen은 데이터프레임을 입력 받아 임의의 테스트 데이터를 생성합니다.   
+DataGen-kuma는 데이터프레임을 입력 받아 임의의 테스트 데이터를 생성합니다.   
 내부적으로 데이터 생성을 위한 데이터 유형별 통계 지표를 생성합니다.   
 통계 지표를 활용하여 해당 데이터 유형에 적합한 유사 데이터를 생성합니다.
 
@@ -19,8 +19,9 @@ DataGen은 데이터프레임을 입력 받아 임의의 테스트 데이터를 
 df라는 판다스 데이터프레임이 있다고 가정합니다.
 100,000 row의 데이터를 생성합니다.
 생성된 객체는 Iteration을 통해 각 row에 접근할 수 있습니다.
+
 ```python
-from datagen import DataGen
+from datagen_kuma.datagen import DataGen
 
 datagen = DataGen(df=df, count=100_000)
 for idx, row in datagen:

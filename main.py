@@ -227,6 +227,6 @@ if __name__ == "__main__":
     print(dg.column_types)
     print(dg.column_types.values())
     print(dg.statistics)
-    gen_df = dg.generate(count=100)
+    gen_df = dg.generate(count=1000000)
     print(gen_df)
     print(gen_df.info())

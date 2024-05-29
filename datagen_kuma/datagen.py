@@ -2,7 +2,6 @@ import copy
 from typing import List
 from collections import defaultdict
 
-from icecream import ic
 import numpy as np
 import pandas as pd
 from scipy.stats import gaussian_kde
@@ -217,5 +216,4 @@ class DataGen:
             *self._generate_boolean_data(),
             *self._generate_etc_data(),
         ]
-        ic(generated_data)
         self._generated_df = pd.concat(generated_data, axis=1)

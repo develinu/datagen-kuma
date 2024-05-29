@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="datagen_kuma",
-    version="0.0.1",
+    version="0.0.2",
     author="devinu",
     author_email="iwlee.dev@gmail.com",
     description="DataGen is a library for generating test data.",
